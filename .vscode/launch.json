@@ -1,0 +1,21 @@
+{
+"version": "0.2.0",
+"configurations": [  
+
+{
+    "type": "cortex-debug",
+    "name": "(gdb) Launch",
+    "request": "launch",
+    "armToolchainPath": "/opt/arm-gnu-toolchain-14.3.rel1-x86_64-arm-none-eabi/bin",
+    "configFiles": ["interface/stlink.cfg", "target/stm32f4x.cfg"],
+    "cwd": "${workspaceFolder}",
+    "executable": "build/blink.elf",
+    "gdbTarget": ":3333",
+    "servertype": "openocd",
+    "liveWatch": {
+      "enabled": true,
+      "samplesPerSecond": 4
+    },
+    "svdFile": "${workspaceFolder}/devices/stm32f407vg/STM32F407.svd"
+}]
+}
