@@ -3,6 +3,8 @@
 
 #define NOTE_ON 0x90
 #define NOTE_OFF 0x80
+#define BASE_NOTE_FQ 440.0L
+#define BASE_NOTE_N 69
 
 typedef enum {
     MIDI_EVT_NONE = 0,
@@ -51,4 +53,8 @@ bool midi_parse_usb_packet(const uint8_t packet[4], midi_note_evt_t *out)
     }
 
     return false;
+}
+
+inline uint32_t note_to_period(midi_note_evt_t src) {
+  return (uint32_t)(1000000.0L / BASE_NOTE_FQ * powl(2, (BASE_NOTE_N - src.note)));
 }
