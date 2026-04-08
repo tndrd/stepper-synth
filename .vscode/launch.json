@@ -9,7 +9,7 @@
     "armToolchainPath": "/opt/arm-gnu-toolchain-14.3.rel1-x86_64-arm-none-eabi/bin",
     "configFiles": ["interface/stlink.cfg", "target/stm32f4x.cfg"],
     "cwd": "${workspaceFolder}",
-    "executable": "build/blink.elf",
+    "executable": "build/synth.elf",
     "gdbTarget": ":3333",
     "servertype": "openocd",
     "liveWatch": {
