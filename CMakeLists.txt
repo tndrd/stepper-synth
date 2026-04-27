@@ -14,11 +14,14 @@ include_directories(lib/CMSIS/CMSIS/Core/Include ${DEVICE_CMSIS_INCLUDE})
 set(DEVICE_COMPILE_FLAGS "  \
   -mcpu=${DEVICE_CORE}      \
   -mfpu=${DEVICE_FPU}       \
+  -mfloat-abi=hard          \
   -mthumb                   \
   -lc -lm -lstdc++ -lsupc++ \
   -g                        \
   -fdata-sections           \
   -ffunction-sections       \
+  -Wdouble-promotion        \
+  -O2                       \
   -Wl,--gc-sections         \
 ")
 
