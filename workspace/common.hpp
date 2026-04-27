@@ -3,10 +3,13 @@
 #include <array>
 #include <cassert>
 #include <cstdlib>
+#include <cmath>
 
 #include "stm32f407xx.h"
 
-void sleep(size_t ticks);
+/// @todo fix highlighting of M_PI from math.h
+#undef M_PI
+constexpr float M_PI = 3.14159265358979323846;
 
 struct PinBase {
   GPIO_TypeDef* const m_gpio;

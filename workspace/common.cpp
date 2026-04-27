@@ -1,7 +1,5 @@
 #include "common.hpp"
 
-void sleep(size_t ticks) { for (size_t i = 0; i < ticks; i++); }
-
 GPIOPinOut::GPIOPinOut(PinBase pin, bool value) : PinBase{pin} {
   assert(m_gpio);
 
