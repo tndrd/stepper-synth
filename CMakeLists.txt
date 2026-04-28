@@ -21,7 +21,7 @@ set(DEVICE_COMPILE_FLAGS "  \
   -fdata-sections           \
   -ffunction-sections       \
   -Wdouble-promotion        \
-  -O2                       \
+  -O0                       \
   -Wl,--gc-sections         \
 ")
 

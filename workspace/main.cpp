@@ -1,8 +1,17 @@
+#include <stdarg.h>
+#include <stdio.h>
+
 #include <memory>
+#include <queue>
 
+#include "class/midi/midi_device.h"
 #include "synth.hpp"
+#include "tusb.h"
 
-#define TIM2_DT_US 50       // notes up to 1Khz
+// Lower values provide better frequency granularity,
+// but significantly affect performance
+#define TIM2_DT_US 50  //
+
 #define HSE_VALUE 8000000ul  // 8 MHz
 
 static std::unique_ptr<StepperSynth> synth;
@@ -28,6 +37,8 @@ extern "C" void TIM2_IRQHandler(void) {
   TIM2->SR &= ~TIM_SR_UIF;
 }
 
+extern "C" void OTG_FS_IRQHandler(void) { tud_int_handler(0); }
+
 static void errata_2_2_13(const volatile uint32_t* reg, uint32_t pre_msk,
                           uint32_t pre_pos) {
   assert(reg);
@@ -40,11 +51,12 @@ static void errata_2_2_13(const volatile uint32_t* reg, uint32_t pre_msk,
   for (uint8_t i = 0; i < cycles; ++i) dummy = *reg;
 }
 
-void checkPllFactors(size_t m, size_t n, size_t p) {
+void checkPllFactors(size_t m, size_t n, size_t p, size_t q) {
   assert(p % 2 == 0);
   assert(2 <= p && p <= 8);
   assert(2 <= m && m <= 63);
-  assert(50 <= n && n <= 99);
+  assert(50 <= n && n <= 432);
+  assert(2 <= q && q <= 15);
 }
 
 enum class MCOSel : uint8_t {
@@ -83,15 +95,18 @@ static void setup() {
   RCC->CR &= ~RCC_CR_PLLON;         // Disable PLL
   while (RCC->CR & RCC_CR_PLLRDY);  //
 
-  size_t pllm = 8 / 4;    // vco_in  = 4 MHz
-  size_t plln = 168 / 2;  // vco_out = 336 MHz
-  size_t pllp = 2;        // pll_out = 168 MHz
-  checkPllFactors(pllm, plln, pllp);
+  size_t pllm = 8;         // vco_in = 1 MHz
+  size_t plln = 336;       // vco_out = 336 MHz
+  size_t pllp = 2;         // pllp_out = 168 MHz
+  size_t pllq = 336 / 48;  // pllq_out = 48 MHz
+  checkPllFactors(pllm, plln, pllp, pllq);
 
-  RCC->PLLCFGR &= ~(RCC_PLLCFGR_PLLM | RCC_PLLCFGR_PLLN | RCC_PLLCFGR_PLLP);
+  RCC->PLLCFGR &= ~(RCC_PLLCFGR_PLLM | RCC_PLLCFGR_PLLN | RCC_PLLCFGR_PLLP |
+                    RCC_PLLCFGR_PLLQ);
   RCC->PLLCFGR |= (pllp / 2 - 1) << RCC_PLLCFGR_PLLP_Pos;  // Set factors
   RCC->PLLCFGR |= pllm << RCC_PLLCFGR_PLLM_Pos;            //
   RCC->PLLCFGR |= plln << RCC_PLLCFGR_PLLN_Pos;            //
+  RCC->PLLCFGR |= pllq << RCC_PLLCFGR_PLLQ_Pos;            //
 
   RCC->PLLCFGR &= ~RCC_PLLCFGR_PLLSRC_Msk;  // Select HSE as PLL source
   RCC->PLLCFGR |= RCC_PLLCFGR_PLLSRC_HSE;   //
@@ -105,11 +120,16 @@ static void setup() {
   RCC->CFGR |= RCC_CFGR_SW_PLL;  // Select PLL as SYSCLK
   while ((RCC->CFGR & RCC_CFGR_SWS_Msk) != RCC_CFGR_SWS_PLL);
 
-  // AHB1 periphery clock enable
+  // AHB1 periphery clock enable (GPIOA)
   RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
   errata_2_2_13(&RCC->AHB1ENR, RCC_CFGR_HPRE_Msk, RCC_CFGR_HPRE_Pos);
 
-  // APB1 periphery clock enable
+  // AHB2 periphery clock enable (OTGFS)
+  RCC->AHB2ENR |= RCC_AHB2ENR_OTGFSEN;
+
+  errata_2_2_13(&RCC->AHB2ENR, RCC_CFGR_HPRE_Msk, RCC_CFGR_HPRE_Pos);
+
+  // APB1 periphery clock enable (TIM2)
   RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
   errata_2_2_13(&RCC->APB1ENR, RCC_CFGR_PPRE1_Msk, RCC_CFGR_PPRE1_Pos);
 
@@ -120,7 +140,24 @@ static void setup() {
   TIM2->CR1 |= TIM_CR1_CEN;
   TIM2->DIER |= TIM_DIER_UIE;
 
+  // USB Pin AF Configuration (PA11, PA12)
+  GPIOA->MODER |= 0b10 << GPIO_MODER_MODE11_Pos;  // Set AF Mode
+  GPIOA->MODER |= 0b10 << GPIO_MODER_MODE12_Pos;  //
+  GPIOA->AFR[1] |= 10 << GPIO_AFRH_AFSEL11_Pos;   // Select AF10 (OTG)
+  GPIOA->AFR[1] |= 10 << GPIO_AFRH_AFSEL12_Pos;   //
+
+  GPIOA->OSPEEDR |= (3 << GPIO_OSPEEDR_OSPEED11_Pos) |  // Set high speed
+                    (3 << GPIO_OSPEEDR_OSPEED12_Pos);   //
+
+  GPIOA->PUPDR &= ~(GPIO_PUPDR_PUPD11 | GPIO_PUPDR_PUPD12);  // Disable pulls
+
+  // Disable VBUS (IMPORTANT)
+  USB_OTG_FS->GCCFG |= USB_OTG_GCCFG_NOVBUSSENS;
+  USB_OTG_FS->GCCFG &= ~(USB_OTG_GCCFG_VBUSBSEN | USB_OTG_GCCFG_VBUSASEN);
+
+  // Enable all the IRQs
   NVIC_EnableIRQ(TIM2_IRQn);
+  NVIC_EnableIRQ(OTG_FS_IRQn);
 }
 
 static void shoveit(bool gtr, bool bass, bool fx) {
@@ -152,27 +189,97 @@ static void shoveit(bool gtr, bool bass, bool fx) {
   synth->playNote(1, 0);
 }
 
+extern "C" int dbg_showstr(const char* fmt, ...) {
+  char buf[256];
+
+  va_list args;
+  va_start(args, fmt);
+  int len = vsnprintf(buf, sizeof(buf), fmt, args);
+  va_end(args);
+
+  static const char* volatile str = buf;
+
+  return len;
+}
+
+struct MidiEventHandler {
+ private:
+  struct DriveData {
+    uint8_t id;
+    uint8_t note;
+  };
+
+  std::vector<DriveData> m_queue;
+
+ public:
+  MidiEventHandler(uint8_t num_drives) {
+    for (uint8_t i = 0; i < num_drives; ++i) m_queue.push_back({i, 0});
+  }
+
+ public:
+  void processEvent(StepperSynth& synth, const uint8_t packet[4]) {
+    uint8_t status = packet[1] & 0xF0;
+    uint8_t note = packet[2] & 0x7F;
+    uint8_t vel = packet[3] & 0x7F;
+
+    if (status == 0x80 || ((status == 0x90) && vel == 0))
+      for (int i = 0; i < m_queue.size(); ++i)
+        if (m_queue[i].note == note) {
+          synth.playNote(m_queue[i].id, 0);
+          m_queue.push_back({m_queue[i].id, 0});
+          m_queue.erase(m_queue.begin() + i);
+          break;
+        }
+    if (status == 0x90 && vel != 0) {
+      synth.playNote(m_queue[0].id, note);
+      m_queue.push_back({m_queue[0].id, note});
+      m_queue.erase(m_queue.begin());
+    }
+  }
+};
+
 int main(void) {
   setup();
+  tusb_init();
+  tud_init(0);
 
   std::vector<StepperSynth::Pins> pins{{{GPIOA, 0}, {GPIOA, 1}},
                                        {{GPIOA, 2}, {GPIOA, 3}}};
 
-  synth = std::make_unique<StepperSynth>(pins);
+  synth  = std::make_unique<StepperSynth>(pins);
   pindbg = std::make_unique<GPIOPinOut>(PinBase{GPIOA, 4});
 
-  // synth->fx(0).vibrato_depth = 0.01;
-  // synth->fx(0).vibrato_period_ms = 500;
+  bool fx = true;
+  synth->fx(0).stutter_period_us = fx ? 1200 : 0;
+  synth->fx(0).stutter_duration_ms = fx ? 60 : 0;
+  synth->fx(1).stutter_period_us = fx ? 1200 : 0;
+  synth->fx(1).stutter_duration_ms = fx ? 60 : 0;
 
   size_t i = 0;
+  uint8_t prev_note = 0;
+
+  MidiEventHandler handler(pins.size());
+
   while (1) {
+    tud_task();
+
+    if (tud_midi_mounted()) {
+      uint8_t packet[4];
+      auto av = tud_midi_available();
+
+      if (av >= 4) {
+        assert(tud_midi_packet_read(packet));
+
+        handler.processEvent(*synth, packet);
+      }
+    }
+
     bool gitr[] = {true, true, false, false, true, true, false, false};
     bool bass[] = {false, true, true, false, false, true, true, false};
     bool vibr[] = {false, false, false, false, true, true, true, false};
 
-    shoveit(gitr[i % 8], bass[i % 8], vibr[i % 8]);
-    //synth->playNote(1, MIDI::Notes::A0 + i % 72);
-    //sleep(200);
+    // shoveit(gitr[i % 8], bass[i % 8], vibr[i % 8]);
+
     i++;
   }
 }
