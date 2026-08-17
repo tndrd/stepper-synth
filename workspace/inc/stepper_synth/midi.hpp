@@ -3,45 +3,60 @@
 
 namespace MIDI {
 
+enum Cin : uint8_t { kCinNoteOn = 0x09, kCinNoteOff = 0x08 };
+
+constexpr uint8_t kCinMask = 0x0F;
+constexpr uint8_t kDataMask = 0x7F;
+constexpr uint8_t kPacketLen = 4;
+
+struct NoteEvent {
+  enum : uint8_t { kNoteOn, kNoteOff, kNone } kind;
+  uint8_t note;
+  uint8_t velocity;
+};
+
+NoteEvent parsePacket(const uint8_t packet[kPacketLen]);
+
+// Note encoding according to MIDI
 // clang-format off
 namespace Notes {
 enum : uint8_t {
-    // 0 октава
+    // 0 octave
     C0  = 12, Db0 = 13, D0  = 14, Eb0 = 15, E0  = 16, F0  = 17,
     Gb0 = 18, G0  = 19, Ab0 = 20, A0  = 21, Bb0 = 22, B0  = 23,
 
-    // 1 октава
+    // 1 octave
     C1  = 24, Db1 = 25, D1  = 26, Eb1 = 27, E1  = 28, F1  = 29,
     Gb1 = 30, G1  = 31, Ab1 = 32, A1  = 33, Bb1 = 34, B1  = 35,
 
-    // 2 октава
+    // 2 octave
     C2  = 36, Db2 = 37, D2  = 38, Eb2 = 39, E2  = 40, F2  = 41,
     Gb2 = 42, G2  = 43, Ab2 = 44, A2  = 45, Bb2 = 46, B2  = 47,
 
-    // 3 октава
+    // 3 octave
     C3  = 48, Db3 = 49, D3  = 50, Eb3 = 51, E3  = 52, F3  = 53,
     Gb3 = 54, G3  = 55, Ab3 = 56, A3  = 57, Bb3 = 58, B3  = 59,
 
-    // 4 октава
+    // 4 octave
     C4  = 60, Db4 = 61, D4  = 62, Eb4 = 63, E4  = 64, F4  = 65,
     Gb4 = 66, G4  = 67, Ab4 = 68, A4  = 69, Bb4 = 70, B4  = 71,
 
-    // 5 октава
+    // 5 octave
     C5  = 72, Db5 = 73, D5  = 74, Eb5 = 75, E5  = 76, F5  = 77,
     Gb5 = 78, G5  = 79, Ab5 = 80, A5  = 81, Bb5 = 82, B5  = 83,
 
-    // 6 октава
+    // 6 octave
     C6  = 84, Db6 = 85, D6  = 86, Eb6 = 87, E6  = 88, F6  = 89,
     Gb6 = 90, G6  = 91, Ab6 = 92, A6  = 93, Bb6 = 94, B6  = 95,
 
-    // 7 октава
+    // 7 octave
     C7  = 96, Db7 = 97, D7  = 98, Eb7 = 99, E7  = 100, F7  = 101,
     Gb7 = 102, G7  = 103, Ab7 = 104, A7  = 105, Bb7 = 106, B7  = 107,
 
-    // 8 октава
+    // 8 octave
     C8  = 108, Db8 = 109, D8  = 110, Eb8 = 111, E8  = 112, F8  = 113,
     Gb8 = 114, G8  = 115, Ab8 = 116, A8  = 117, Bb8 = 118, B8  = 119
 };
 // clang-format on
-}  // namespace Note
+}  // namespace Notes
 }  // namespace MIDI

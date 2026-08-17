@@ -4,6 +4,8 @@ set(CMAKE_TOOLCHAIN_FILE common/toolchain.cmake)
 # Disable linkning in compiler checks
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 project(stm32-build C CXX ASM)
 
 include(workspace/project.cmake)

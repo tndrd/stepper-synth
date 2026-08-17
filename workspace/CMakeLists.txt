@@ -10,13 +10,25 @@ add_library(tusb
   lib/tinyusb/src/portable/synopsys/dwc2/dcd_dwc2.c
   lib/tinyusb/src/portable/synopsys/dwc2/dwc2_common.c
 
-  usb_descriptors.c
+  tusb/usb_descriptors.c
 )
 target_include_directories(tusb PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/lib/tinyusb/src
-  ${CMAKE_CURRENT_SOURCE_DIR}
+  lib/tinyusb/src
+  tusb
 )
 
-add_library(synth_main main.cpp synth.cpp common.cpp)
-target_include_directories(synth_main PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+# OBJECT because otherwise linker may ignore
+# weak isr redefinitions
+add_library(synth_main OBJECT
+  src/12tet.cpp
+  src/board.cpp
+  src/isr.cpp
+  src/main.cpp
+  src/midi.cpp
+  src/note_scheduler.cpp
+  src/pwm_generator.cpp
+  src/shared.cpp
+  src/usb.cpp
+)
+target_include_directories(synth_main PUBLIC inc/)
 target_link_libraries(synth_main PUBLIC tusb)
