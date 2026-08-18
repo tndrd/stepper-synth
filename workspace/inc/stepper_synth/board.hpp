@@ -14,4 +14,3 @@ struct Clocks {
 
 Clocks boardInit();
 void boardEnableIRQ();
-void boardSystickStart();

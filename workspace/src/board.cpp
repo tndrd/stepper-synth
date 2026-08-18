@@ -115,12 +115,6 @@ Clocks boardInit() {
   RCC->APB1ENR |= RCC_APB1ENR_TIM2EN | RCC_APB1ENR_TIM3EN;
   errata_2_2_13(&RCC->APB1ENR, RCC_CFGR_PPRE1_Msk, RCC_CFGR_PPRE1_Pos);
 
-  // Set up SysTick for 1ms counts
-  SysTick->LOAD = SYNTH_SYSCLK_FREQUENCY_MHZ * 1000 - 1;
-  SysTick->VAL = 0;
-  SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk |  // Use SYSCLK
-                  SysTick_CTRL_TICKINT_Msk;     // Enable exception
-
   return clk;
 }
 
@@ -128,8 +122,4 @@ void boardEnableIRQ() {
   __DSB();  // Make sure all initialization is complete
   NVIC_EnableIRQ(TIM2_IRQn);
   NVIC_EnableIRQ(OTG_FS_IRQn);
-}
-
-void boardSystickStart() {
-  SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;
 }

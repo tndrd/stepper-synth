@@ -1,34 +1,52 @@
 cmake_minimum_required(VERSION 3.20)
 project(stepper_synth C CXX ASM)
 
+# Add tinyUSB target
+set(TUSB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/tinyusb)
 add_library(tusb
-  lib/tinyusb/src/tusb.c
-  lib/tinyusb/src/common/tusb_fifo.c
-  lib/tinyusb/src/class/midi/midi_device.c
-  lib/tinyusb/src/device/usbd.c
-  lib/tinyusb/src/device/usbd_control.c
-  lib/tinyusb/src/portable/synopsys/dwc2/dcd_dwc2.c
-  lib/tinyusb/src/portable/synopsys/dwc2/dwc2_common.c
+  ${TUSB_DIR}/src/tusb.c
+  ${TUSB_DIR}/src/common/tusb_fifo.c
+  ${TUSB_DIR}/src/class/midi/midi_device.c
+  ${TUSB_DIR}/src/device/usbd.c
+  ${TUSB_DIR}/src/device/usbd_control.c
+  ${TUSB_DIR}/src/portable/synopsys/dwc2/dcd_dwc2.c
+  ${TUSB_DIR}/src/portable/synopsys/dwc2/dwc2_common.c
 
-  tusb/usb_descriptors.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/tusb/usb_descriptors.c
 )
 target_include_directories(tusb PUBLIC
-  lib/tinyusb/src
-  tusb
+  ${TUSB_DIR}/src/
+  ${CMAKE_CURRENT_SOURCE_DIR}/tusb/
 )
 
+# Configure and add FreeRTOS target
+add_library(freertos_config INTERFACE)
+target_include_directories(freertos_config INTERFACE
+  ${CMAKE_SOURCE_DIR}/workspace/freertos/
+)
+set(FREERTOS_PORT GCC_ARM_CM4F CACHE STRING "" FORCE)
+set(FREERTOS_HEAP 4 CACHE STRING "" FORCE)
+
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/FreeRTOS-Kernel)
+
+add_library(freertos_hooks
+  ${CMAKE_CURRENT_SOURCE_DIR}/freertos/hooks.c
+)
+target_link_libraries(freertos_hooks PUBLIC freertos_kernel)
+
+# Add application target
 # OBJECT because otherwise linker may ignore
 # weak isr redefinitions
 add_library(synth_main OBJECT
-  src/12tet.cpp
-  src/board.cpp
-  src/isr.cpp
-  src/main.cpp
-  src/midi.cpp
-  src/note_scheduler.cpp
-  src/pwm_generator.cpp
-  src/shared.cpp
-  src/usb.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/12tet.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/board.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/midi.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/note_scheduler.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/pwm_generator.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/usb.cpp
 )
-target_include_directories(synth_main PUBLIC inc/)
-target_link_libraries(synth_main PUBLIC tusb)
+target_include_directories(synth_main PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/inc/
+)
+target_link_libraries(synth_main PUBLIC tusb freertos_kernel freertos_hooks)

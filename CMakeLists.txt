@@ -51,8 +51,8 @@ message(STATUS CUSTOM_SYSTEM_INIT=${CUSTOM_SYSTEM_INIT})
 
 set(CMAKE_EXECUTABLE_SUFFIX .elf)
 add_executable(${ELF_OUTPUT}
-  common/syscalls.c
-  common/sysmem.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/common/syscalls.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/common/sysmem.c
   ${DEVICE_STARTUP_SRC}
   ${SYSTEM_INIT_SOURCE}
 )

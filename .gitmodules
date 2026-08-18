@@ -7,3 +7,6 @@
 [submodule "workspace/lib/tinyusb"]
 	path = workspace/lib/tinyusb
 	url = https://github.com/hathach/tinyusb.git
+[submodule "workspace/lib/FreeRTOS-Kernel"]
+	path = workspace/lib/FreeRTOS-Kernel
+	url = https://github.com/FreeRTOS/FreeRTOS-Kernel.git
