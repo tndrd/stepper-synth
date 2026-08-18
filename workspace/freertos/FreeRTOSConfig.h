@@ -25,8 +25,8 @@ extern void vAssertCalled(const char*, int);
 
 #define configPRIO_BITS __NVIC_PRIO_BITS
 
-#define configLIBRARY_LOWEST_INTERRUPT_PRIORITY			  15
-#define configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY	5
+#define configLIBRARY_LOWEST_INTERRUPT_PRIORITY			  ( (1 << configPRIO_BITS) - 1 )
+#define configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY	3
 
 #define configKERNEL_INTERRUPT_PRIORITY \
   ( configLIBRARY_LOWEST_INTERRUPT_PRIORITY << (8 - configPRIO_BITS) )

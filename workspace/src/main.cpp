@@ -69,7 +69,7 @@ int main(void) {
 
   // Configure periphery and initialize vars
   // that are shared with ISRs
-  //usbInit();
+  usbInit();
 
   PWMGenerator::Pin pins[SYNTH_NUM_VOICES] = {
       {GPIOA, 0, 1},  // TIM2_CH1
