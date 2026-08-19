@@ -1,5 +1,6 @@
 #pragma once
 
+// Number of individual voices
 // Now works only with <= 4
 #define SYNTH_NUM_VOICES 4
 
@@ -10,3 +11,17 @@
 // Clock configuration
 #define SYNTH_HSE_FREQUENCY_MHZ 8
 #define SYNTH_SYSCLK_FREQUENCY_MHZ 168
+
+// Interrupt priorities relative to
+// configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY
+#define SYNTH_PWM_TIM_IRQ_PRIORITY_REL -1
+#define SYNTH_USB_OTG_IRQ_PRIORITY_REL 0
+
+// FreeRTOS application options
+#define SYNTH_NOTE_EVENT_QUEUE_SIZE 32
+
+#define SYNTH_NOTE_HANDLER_TASK_STACK_SIZE 512
+#define SYNTH_NOTE_HANDLER_TASK_PRIORITY 1
+
+#define SYNTH_USB_MIDI_TASK_STACK_SIZE 512
+#define SYNTH_USB_MIDI_TASK_PRIORITY 1

@@ -31,7 +31,7 @@ struct PWMGenerator {
   /// @param period us
   /// @note If ```period``` equals zero, channel is disabled.
   ///       Providing a positive ```period``` to a disabled channel enables it.
-  void setPWMPeriod(uint8_t ch, uint32_t period);
+  void setChannelPeriod(uint8_t ch, uint32_t period);
 
   void isr();
 };

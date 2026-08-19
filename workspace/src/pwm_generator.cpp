@@ -70,7 +70,7 @@ void PWMGenerator::start() {
   m_tim->CR1 |= TIM_CR1_CEN;
 }
 
-void PWMGenerator::setPWMPeriod(uint8_t ch, uint32_t period) {
+void PWMGenerator::setChannelPeriod(uint8_t ch, uint32_t period) {
   assert(ch < m_num_channels);
 
   // Compare event in toggle mode only flips the polarity
