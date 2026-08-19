@@ -11,7 +11,7 @@ extern "C" {
 #define CFG_TUSB_RHPORT0_MODE OPT_MODE_DEVICE
 #define CFG_TUSB_RHPORT1_MODE OPT_MODE_NONE
 #define CFG_TUSB_MCU          OPT_MCU_STM32F4
-#define CFG_TUSB_OS           OPT_OS_NONE
+#define CFG_TUSB_OS           OPT_OS_FREERTOS
 #define CFG_TUSB_DEBUG        0
 #define CFG_TUSB_DEBUG_PRINTF dbg_showstr
 

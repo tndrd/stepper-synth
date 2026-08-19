@@ -1,6 +1,21 @@
 cmake_minimum_required(VERSION 3.20)
 project(stepper_synth C CXX ASM)
 
+# Configure and add FreeRTOS target
+add_library(freertos_config INTERFACE)
+target_include_directories(freertos_config INTERFACE
+  ${CMAKE_SOURCE_DIR}/workspace/freertos/
+)
+set(FREERTOS_PORT GCC_ARM_CM4F CACHE STRING "" FORCE)
+set(FREERTOS_HEAP 4 CACHE STRING "" FORCE)
+
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/FreeRTOS-Kernel)
+
+# Add hooks to kernel sources
+target_sources(freertos_kernel PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/freertos/hooks.c
+)
+
 # Add tinyUSB target
 set(TUSB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/tinyusb)
 add_library(tusb
@@ -18,21 +33,7 @@ target_include_directories(tusb PUBLIC
   ${TUSB_DIR}/src/
   ${CMAKE_CURRENT_SOURCE_DIR}/tusb/
 )
-
-# Configure and add FreeRTOS target
-add_library(freertos_config INTERFACE)
-target_include_directories(freertos_config INTERFACE
-  ${CMAKE_SOURCE_DIR}/workspace/freertos/
-)
-set(FREERTOS_PORT GCC_ARM_CM4F CACHE STRING "" FORCE)
-set(FREERTOS_HEAP 4 CACHE STRING "" FORCE)
-
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/FreeRTOS-Kernel)
-
-add_library(freertos_hooks
-  ${CMAKE_CURRENT_SOURCE_DIR}/freertos/hooks.c
-)
-target_link_libraries(freertos_hooks PUBLIC freertos_kernel)
+target_link_libraries(tusb PUBLIC freertos_kernel)
 
 # Add application target
 # OBJECT because otherwise linker may ignore
@@ -49,4 +50,4 @@ add_library(synth_main OBJECT
 target_include_directories(synth_main PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/inc/
 )
-target_link_libraries(synth_main PUBLIC tusb freertos_kernel freertos_hooks)
+target_link_libraries(synth_main PUBLIC tusb freertos_kernel)
