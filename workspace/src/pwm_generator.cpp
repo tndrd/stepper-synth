@@ -73,7 +73,7 @@ void PWMGenerator::start() {
 void PWMGenerator::setChannelPeriod(uint8_t ch, uint32_t period) {
   assert(ch < m_num_channels);
 
-  // Compare event in toggle mode only flips the polarity
+  // Compare event in toggle mode only flips the polarity.
   // Therefore, a single PWM period consists of two CC events
   // This division accounts for that
   period /= 2;
@@ -124,8 +124,6 @@ void PWMGenerator::isr() {
 
     // If timer has counted up to CCR
     if (m_tim->SR & tim_sr_ccxif_msk) {
-      //assert(m_periods_us[ch] != 0);  // by design
-
       // Add one target period to CCR
       *tim_ccrx_ptr += m_periods_us[ch];
 

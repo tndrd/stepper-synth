@@ -68,7 +68,6 @@ char const* string_desc_arr[] = {
 
 static uint16_t _desc_str[32];
 
-/// @TODO: раскурить эту жесть
 uint16_t const* tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
   (void) langid;
 
