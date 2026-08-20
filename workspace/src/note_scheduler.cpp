@@ -73,3 +73,11 @@ NoteScheduler::Snapshot NoteScheduler::getSnapshot() const {
 
   return s;
 }
+
+bool NoteScheduler::allFree() const {
+  for (uint8_t i = 0; i < SYNTH_NUM_VOICES; ++i)
+    if (m_voices[i].note != kFreeNote)
+      return false;
+
+  return true;
+}

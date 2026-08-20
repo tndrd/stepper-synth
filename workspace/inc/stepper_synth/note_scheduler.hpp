@@ -59,4 +59,7 @@ class NoteScheduler {
 
   /// @returns snapshot suitable for publishing to other tasks.
   Snapshot getSnapshot() const;
+
+  /// @returns whether all voices are vacant
+  bool allFree() const;
 };

@@ -52,6 +52,11 @@ extern void vAssertCalled(const char*, int);
 #define configUSE_MALLOC_FAILED_HOOK   1
 #define configCHECK_FOR_STACK_OVERFLOW 2
 
+#define configUSE_TIMERS 1
+#define configTIMER_TASK_PRIORITY 0
+#define configTIMER_TASK_STACK_DEPTH 128
+#define configTIMER_QUEUE_LENGTH 4
+
 #define configUSE_MUTEXES 1
 
 #define INCLUDE_vTaskDelay 1
