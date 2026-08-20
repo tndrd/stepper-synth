@@ -33,19 +33,23 @@ static void usbMidiTask(void* param) {
 
   QueueHandle_t eventQueue = ctx->eventQueue;
 
-  uint8_t packet[4];
+  uint8_t packet[MIDI::kPacketLen];
 
   for (;;) {
-    tud_task();  // Blocks between interrupts
+    tud_task();
 
     if (!tud_midi_mounted()) continue;
     if (!tud_midi_available()) continue;
-    if (!tud_midi_packet_read(packet)) continue;
 
-    MIDI::NoteEvent event = MIDI::parsePacket(packet);
+    while (tud_midi_available() >= MIDI::kPacketLen) {
+      assert(tud_midi_packet_read(packet));
+      MIDI::NoteEvent event = MIDI::parsePacket(packet);
 
-    BaseType_t ok = xQueueSend(eventQueue, &event, portMAX_DELAY);
-    assert(ok == pdPASS);
+      if (event.kind == MIDI::NoteEvent::kNone) continue;
+
+      BaseType_t ok = xQueueSend(eventQueue, &event, 0);
+      assert(ok = pdPASS);
+    }
   }
 }
 
@@ -129,7 +133,7 @@ int main(void) {
   QueueHandle_t eventQueue =
       xQueueCreate(SYNTH_NOTE_EVENT_QUEUE_SIZE, sizeof(MIDI::NoteEvent));
 
-  NoteHandlerTaskContext noteHandlerCtx;
+  static NoteHandlerTaskContext noteHandlerCtx;
   noteHandlerCtx.eventQueue = eventQueue;
   noteHandlerCtx.noteScheduler = &s_noteScheduler;
   noteHandlerCtx.pwmGenerator = &s_pwmGenerator;
@@ -139,7 +143,7 @@ int main(void) {
                    SYNTH_NOTE_HANDLER_TASK_PRIORITY, nullptr);
   assert(ok == pdPASS);
 
-  UsbMidiTaskContext usbMidiCtx;
+  static UsbMidiTaskContext usbMidiCtx;
   usbMidiCtx.eventQueue = eventQueue;
 
   ok = xTaskCreate(usbMidiTask, "USB-MIDI", SYNTH_USB_MIDI_TASK_STACK_SIZE,
